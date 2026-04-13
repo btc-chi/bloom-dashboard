@@ -1,13 +1,19 @@
-import { fetchDailyBurn } from "@/lib/queries";
+import { fetchDailyBurn, fetchSummary } from "@/lib/queries";
 import { Card, CardTitle, CardValue, CardFooter } from "@/components/ui/card";
 import { RangeToggle } from "@/components/range-toggle";
 import { parseRange, rangeLabel } from "@/lib/range";
-import { Wallet, AlertTriangle } from "lucide-react";
+import { Wallet, AlertTriangle, Hash, Type, DollarSign } from "lucide-react";
 
 export const revalidate = 60;
 
 function fmt(n: number, decimals = 2): string {
   return `$${n.toFixed(decimals)}`;
+}
+
+function fmtNum(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return n.toString();
 }
 
 // API account balances — update these when you top up
@@ -25,7 +31,10 @@ export default async function CostsPage({
   const params = await searchParams;
   const range = parseRange(params.range);
 
-  const daily = await fetchDailyBurn(range);
+  const [daily, summary] = await Promise.all([
+    fetchDailyBurn(range),
+    fetchSummary(range),
+  ]);
 
   // Build running balance deduction table (most recent day first)
   const sortedDaily = [...daily].reverse();
@@ -101,6 +110,47 @@ export default async function CostsPage({
           </div>
         </div>
       )}
+
+      {/* Token stats */}
+      <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Card>
+          <div className="flex items-center gap-2 mb-2">
+            <Hash className="h-4 w-4 text-zinc-500" />
+            <CardTitle>Input Tokens</CardTitle>
+          </div>
+          <CardValue className="text-2xl">{fmtNum(summary.total_input_tokens)}</CardValue>
+          <CardFooter>~{fmtNum(summary.avg_input_tokens)} per answer</CardFooter>
+        </Card>
+
+        <Card>
+          <div className="flex items-center gap-2 mb-2">
+            <Hash className="h-4 w-4 text-zinc-500" />
+            <CardTitle>Output Tokens</CardTitle>
+          </div>
+          <CardValue className="text-2xl">{fmtNum(summary.total_output_tokens)}</CardValue>
+          <CardFooter>~{fmtNum(summary.avg_output_tokens)} per answer</CardFooter>
+        </Card>
+
+        <Card>
+          <div className="flex items-center gap-2 mb-2">
+            <Type className="h-4 w-4 text-zinc-500" />
+            <CardTitle>TTS Characters</CardTitle>
+          </div>
+          <CardValue className="text-2xl">{fmtNum(summary.total_tts_chars)}</CardValue>
+          <CardFooter>Spoken audio</CardFooter>
+        </Card>
+
+        <Card>
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign className="h-4 w-4 text-zinc-500" />
+            <CardTitle>Total Tokens</CardTitle>
+          </div>
+          <CardValue className="text-2xl">
+            {fmtNum(summary.total_input_tokens + summary.total_output_tokens)}
+          </CardValue>
+          <CardFooter>LLM only</CardFooter>
+        </Card>
+      </div>
 
       {/* Daily Spend Deductions */}
       <Card className="mt-6">
