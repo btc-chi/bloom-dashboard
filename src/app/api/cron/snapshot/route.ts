@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
 /**
- * Vercel Cron endpoint. Runs daily at 00:05 UTC (scheduled in vercel.json).
+ * Vercel Cron endpoint. Runs daily at 00:05 CST / 06:05 UTC (scheduled in vercel.json).
  *
  * 1. Calls Supabase's snapshot_daily_usage() function which rolls up
  *    yesterday's data into daily_snapshots.
