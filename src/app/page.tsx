@@ -3,7 +3,7 @@ import { Card, CardTitle, CardValue, CardFooter } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { RangeToggle } from "@/components/range-toggle";
 import { parseRange, rangeLabel } from "@/lib/range";
-import { Activity, Users, DollarSign, Zap, TrendingUp, TrendingDown, Hash, Type } from "lucide-react";
+import { Activity, Users, DollarSign, Zap, TrendingUp, TrendingDown, Hash, Type, AlertTriangle, Wallet } from "lucide-react";
 
 export const revalidate = 60;
 
@@ -54,6 +54,14 @@ export default async function Dashboard({
 
   const isSpike = trend.delta_vs_yesterday > 50;
   const isDrop = trend.delta_vs_yesterday < -20;
+
+  // API account balances (hardcoded for now — swap with real values later)
+  const balances = [
+    { provider: "Perplexity", deposited: 13, spent: perplexityCost, color: "text-blue-400", barColor: "bg-blue-500" },
+    { provider: "OpenAI TTS", deposited: 10, spent: ttsCost, color: "text-amber-400", barColor: "bg-amber-500" },
+    { provider: "DeepSeek", deposited: 5, spent: deepseekCost, color: "text-emerald-400", barColor: "bg-emerald-500" },
+  ];
+  const warnings = balances.filter((b) => b.spent / b.deposited >= 0.8);
 
   return (
     <main className="mx-auto max-w-6xl px-8 py-10">
@@ -203,6 +211,55 @@ export default async function Dashboard({
           </div>
         </Card>
       </div>
+
+      {/* API Account Balances */}
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+        {balances.map((b) => {
+          const remaining = Math.max(b.deposited - b.spent, 0);
+          const pctUsed = Math.min((b.spent / b.deposited) * 100, 100);
+          const isLow = pctUsed >= 80;
+          return (
+            <Card key={b.provider}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Wallet className={`h-4 w-4 ${b.color}`} />
+                  <CardTitle>{b.provider}</CardTitle>
+                </div>
+                {isLow && <AlertTriangle className="h-4 w-4 text-red-400" />}
+              </div>
+              <CardValue className="text-2xl">${remaining.toFixed(2)}</CardValue>
+              <CardFooter>${b.deposited.toFixed(2)} deposited · {Math.round(pctUsed)}% used</CardFooter>
+              <div className="mt-3">
+                <Progress
+                  value={pctUsed}
+                  label="Balance used"
+                  amount={`$${b.spent.toFixed(2)} spent`}
+                  color={isLow ? "bg-red-500" : b.barColor}
+                />
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Low balance alerts */}
+      {warnings.length > 0 && (
+        <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+          <div className="flex items-start gap-2 text-sm text-amber-400">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <strong>Low balance:</strong>{" "}
+              <span className="text-zinc-300">
+                {warnings.map((w) => {
+                  const rem = Math.max(w.deposited - w.spent, 0);
+                  return `${w.provider} has $${rem.toFixed(2)} remaining`;
+                }).join(" · ")}
+                . Consider topping up.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Token stats */}
       <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">

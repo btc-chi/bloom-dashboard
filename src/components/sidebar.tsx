@@ -10,7 +10,6 @@ import {
   DollarSign,
   PanelLeftClose,
   PanelLeftOpen,
-  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -36,10 +35,7 @@ export function Sidebar() {
         {/* Brand + collapse */}
         <div className="flex items-center justify-between px-4 py-4">
           {!collapsed && (
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-zinc-50" />
-              <span className="text-lg font-semibold tracking-tight">Bloom</span>
-            </div>
+            <span className="text-lg font-semibold tracking-tight">bloom API</span>
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
