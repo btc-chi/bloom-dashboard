@@ -1,24 +1,14 @@
-import { fetchSummary, fetchDailyBurn, fetchTopUsers, fetchTrend, fetchRecentAnswers } from "@/lib/queries";
+import { fetchSummary, fetchDailyBurn, fetchTrend, fetchRecentAnswers } from "@/lib/queries";
 import { Card, CardTitle, CardValue, CardFooter } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { RangeToggle } from "@/components/range-toggle";
 import { parseRange, rangeLabel } from "@/lib/range";
-import { Activity, Users, DollarSign, Zap, TrendingUp, TrendingDown, Hash, Type, AlertTriangle, Wallet } from "lucide-react";
+import { Activity, Users, DollarSign, Zap, TrendingUp, TrendingDown } from "lucide-react";
 
 export const revalidate = 60;
 
 function fmt(n: number, decimals = 4): string {
   return `$${n.toFixed(decimals)}`;
-}
-
-function mask(id: string): string {
-  return id.slice(0, 8);
-}
-
-function fmtNum(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return n.toString();
 }
 
 function fmtTime(iso: string): string {
@@ -30,6 +20,10 @@ function fmtTime(iso: string): string {
   });
 }
 
+function mask(id: string): string {
+  return id.slice(0, 8);
+}
+
 export default async function Dashboard({
   searchParams,
 }: {
@@ -38,10 +32,9 @@ export default async function Dashboard({
   const params = await searchParams;
   const range = parseRange(params.range);
 
-  const [summary, daily, topUsers, trend, recent] = await Promise.all([
+  const [summary, daily, trend, recent] = await Promise.all([
     fetchSummary(range),
     fetchDailyBurn(range),
-    fetchTopUsers(range),
     fetchTrend(),
     fetchRecentAnswers(range, 20),
   ]);
@@ -55,13 +48,6 @@ export default async function Dashboard({
   const isSpike = trend.delta_vs_yesterday > 50;
   const isDrop = trend.delta_vs_yesterday < -20;
 
-  // API account balances — update these when you top up
-  const balances = [
-    { provider: "Perplexity Sonar", balance: 4.31, alertAt: 1, note: "No auto top-up", color: "text-blue-400", barColor: "bg-blue-500" },
-    { provider: "DeepSeek", balance: 9.88, alertAt: 1, note: "Notified at $1 remaining", color: "text-emerald-400", barColor: "bg-emerald-500" },
-    { provider: "OpenAI TTS", balance: 5.04, alertAt: 1, note: "Auto top-up enabled", color: "text-amber-400", barColor: "bg-amber-500" },
-  ];
-  const warnings = balances.filter((b) => b.balance <= b.alertAt);
 
   return (
     <main className="mx-auto max-w-6xl px-8 py-10">
@@ -212,85 +198,6 @@ export default async function Dashboard({
         </Card>
       </div>
 
-      {/* API Account Balances */}
-      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-        {balances.map((b) => {
-          const isLow = b.balance <= b.alertAt;
-          return (
-            <Card key={b.provider}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Wallet className={`h-4 w-4 ${b.color}`} />
-                  <CardTitle>{b.provider}</CardTitle>
-                </div>
-                {isLow && <AlertTriangle className="h-4 w-4 text-red-400" />}
-              </div>
-              <CardValue className={`text-2xl ${isLow ? "text-red-400" : ""}`}>
-                ${b.balance.toFixed(2)}
-              </CardValue>
-              <CardFooter>{b.note} · Alert at ${b.alertAt}</CardFooter>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Low balance alerts */}
-      {warnings.length > 0 && (
-        <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
-          <div className="flex items-start gap-2 text-sm text-amber-400">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
-              <strong>Low balance:</strong>{" "}
-              <span className="text-zinc-300">
-                {warnings.map((w) => `${w.provider} is at $${w.balance.toFixed(2)}`).join(" · ")}
-                . Time to top up.
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Token stats */}
-      <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card>
-          <div className="flex items-center gap-2 mb-2">
-            <Hash className="h-4 w-4 text-zinc-500" />
-            <CardTitle>Input Tokens</CardTitle>
-          </div>
-          <CardValue className="text-2xl">{fmtNum(summary.total_input_tokens)}</CardValue>
-          <CardFooter>~{fmtNum(summary.avg_input_tokens)} per answer</CardFooter>
-        </Card>
-
-        <Card>
-          <div className="flex items-center gap-2 mb-2">
-            <Hash className="h-4 w-4 text-zinc-500" />
-            <CardTitle>Output Tokens</CardTitle>
-          </div>
-          <CardValue className="text-2xl">{fmtNum(summary.total_output_tokens)}</CardValue>
-          <CardFooter>~{fmtNum(summary.avg_output_tokens)} per answer</CardFooter>
-        </Card>
-
-        <Card>
-          <div className="flex items-center gap-2 mb-2">
-            <Type className="h-4 w-4 text-zinc-500" />
-            <CardTitle>TTS Characters</CardTitle>
-          </div>
-          <CardValue className="text-2xl">{fmtNum(summary.total_tts_chars)}</CardValue>
-          <CardFooter>Spoken audio</CardFooter>
-        </Card>
-
-        <Card>
-          <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="h-4 w-4 text-zinc-500" />
-            <CardTitle>Total Tokens</CardTitle>
-          </div>
-          <CardValue className="text-2xl">
-            {fmtNum(summary.total_input_tokens + summary.total_output_tokens)}
-          </CardValue>
-          <CardFooter>LLM only</CardFooter>
-        </Card>
-      </div>
-
       {/* Daily/Hourly Burn */}
       <Card className="mt-6">
         <CardTitle className="mb-4">
@@ -375,48 +282,6 @@ export default async function Dashboard({
               ))}
               {recent.length === 0 && (
                 <tr><td colSpan={9} className="py-8 text-center text-zinc-600">No answers in this range</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Top Users */}
-      <Card className="mt-6">
-        <CardTitle className="mb-4">Top Users by Cost ({rangeLabel(range)})</CardTitle>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-800 text-left text-zinc-500">
-                <th className="pb-2 pr-4 font-medium">User</th>
-                <th className="pb-2 pr-4 font-medium">Access</th>
-                <th className="pb-2 pr-4 font-medium text-right">Perplexity</th>
-                <th className="pb-2 pr-4 font-medium text-right">DeepSeek</th>
-                <th className="pb-2 pr-4 font-medium text-right">TTS</th>
-                <th className="pb-2 font-medium text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topUsers.map((u) => (
-                <tr key={u.user_id} className="border-b border-zinc-800/50">
-                  <td className="py-2 pr-4 font-mono text-zinc-400">{mask(u.user_id)}</td>
-                  <td className="py-2 pr-4">
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                      u.access_state === "subscriber" ? "bg-emerald-500/10 text-emerald-400" :
-                      u.access_state === "trial" ? "bg-blue-500/10 text-blue-400" :
-                      "bg-zinc-800 text-zinc-400"
-                    }`}>
-                      {u.access_state}
-                    </span>
-                  </td>
-                  <td className="py-2 pr-4 text-right text-zinc-400">{u.perplexity_calls}</td>
-                  <td className="py-2 pr-4 text-right text-zinc-400">{u.deepseek_calls}</td>
-                  <td className="py-2 pr-4 text-right text-zinc-400">{u.tts_calls}</td>
-                  <td className="py-2 text-right font-mono font-semibold text-zinc-100">{fmt(u.total_cost_usd)}</td>
-                </tr>
-              ))}
-              {topUsers.length === 0 && (
-                <tr><td colSpan={6} className="py-8 text-center text-zinc-600">No users in this range</td></tr>
               )}
             </tbody>
           </table>
