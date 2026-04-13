@@ -16,8 +16,8 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/users", label: "Users", icon: Users },
-  { href: "/routing", label: "Routing", icon: Activity, soon: true },
   { href: "/costs", label: "Costs", icon: DollarSign },
+  { href: "/routing", label: "Routing", icon: Activity, soon: true },
 ];
 
 export function Sidebar() {

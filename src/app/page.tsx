@@ -289,7 +289,7 @@ export default async function Dashboard({
       </Card>
 
       <div className="mt-8 text-center text-xs text-zinc-600">
-        Auto-refreshes every 60s · Data from Supabase api_usage
+        Data from Supabase api_usage
       </div>
     </main>
   );
