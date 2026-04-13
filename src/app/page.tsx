@@ -55,13 +55,13 @@ export default async function Dashboard({
   const isSpike = trend.delta_vs_yesterday > 50;
   const isDrop = trend.delta_vs_yesterday < -20;
 
-  // API account balances (hardcoded for now — swap with real values later)
+  // API account balances — update these when you top up
   const balances = [
-    { provider: "Perplexity", deposited: 13, spent: perplexityCost, color: "text-blue-400", barColor: "bg-blue-500" },
-    { provider: "OpenAI TTS", deposited: 10, spent: ttsCost, color: "text-amber-400", barColor: "bg-amber-500" },
-    { provider: "DeepSeek", deposited: 5, spent: deepseekCost, color: "text-emerald-400", barColor: "bg-emerald-500" },
+    { provider: "Perplexity Sonar", balance: 4.31, alertAt: 1, note: "No auto top-up", color: "text-blue-400", barColor: "bg-blue-500" },
+    { provider: "DeepSeek", balance: 9.88, alertAt: 1, note: "Notified at $1 remaining", color: "text-emerald-400", barColor: "bg-emerald-500" },
+    { provider: "OpenAI TTS", balance: 5.04, alertAt: 1, note: "Auto top-up enabled", color: "text-amber-400", barColor: "bg-amber-500" },
   ];
-  const warnings = balances.filter((b) => b.spent / b.deposited >= 0.8);
+  const warnings = balances.filter((b) => b.balance <= b.alertAt);
 
   return (
     <main className="mx-auto max-w-6xl px-8 py-10">
@@ -215,9 +215,7 @@ export default async function Dashboard({
       {/* API Account Balances */}
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
         {balances.map((b) => {
-          const remaining = Math.max(b.deposited - b.spent, 0);
-          const pctUsed = Math.min((b.spent / b.deposited) * 100, 100);
-          const isLow = pctUsed >= 80;
+          const isLow = b.balance <= b.alertAt;
           return (
             <Card key={b.provider}>
               <div className="flex items-center justify-between mb-2">
@@ -227,16 +225,10 @@ export default async function Dashboard({
                 </div>
                 {isLow && <AlertTriangle className="h-4 w-4 text-red-400" />}
               </div>
-              <CardValue className="text-2xl">${remaining.toFixed(2)}</CardValue>
-              <CardFooter>${b.deposited.toFixed(2)} deposited · {Math.round(pctUsed)}% used</CardFooter>
-              <div className="mt-3">
-                <Progress
-                  value={pctUsed}
-                  label="Balance used"
-                  amount={`$${b.spent.toFixed(2)} spent`}
-                  color={isLow ? "bg-red-500" : b.barColor}
-                />
-              </div>
+              <CardValue className={`text-2xl ${isLow ? "text-red-400" : ""}`}>
+                ${b.balance.toFixed(2)}
+              </CardValue>
+              <CardFooter>{b.note} · Alert at ${b.alertAt}</CardFooter>
             </Card>
           );
         })}
@@ -250,11 +242,8 @@ export default async function Dashboard({
             <div>
               <strong>Low balance:</strong>{" "}
               <span className="text-zinc-300">
-                {warnings.map((w) => {
-                  const rem = Math.max(w.deposited - w.spent, 0);
-                  return `${w.provider} has $${rem.toFixed(2)} remaining`;
-                }).join(" · ")}
-                . Consider topping up.
+                {warnings.map((w) => `${w.provider} is at $${w.balance.toFixed(2)}`).join(" · ")}
+                . Time to top up.
               </span>
             </div>
           </div>
