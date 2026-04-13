@@ -1,9 +1,9 @@
-import { fetchSummary, fetchDailyBurn, fetchTopUsers, fetchTrend, fetchRecentAnswers, fetchActiveUsers } from "@/lib/queries";
+import { fetchSummary, fetchDailyBurn, fetchTopUsers, fetchTrend, fetchRecentAnswers } from "@/lib/queries";
 import { Card, CardTitle, CardValue, CardFooter } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { RangeToggle } from "@/components/range-toggle";
 import { parseRange, rangeLabel } from "@/lib/range";
-import { Activity, Users, DollarSign, Zap, TrendingUp, TrendingDown, Hash, Type, UserPlus, Flame } from "lucide-react";
+import { Activity, Users, DollarSign, Zap, TrendingUp, TrendingDown, Hash, Type } from "lucide-react";
 
 export const revalidate = 60;
 
@@ -38,13 +38,12 @@ export default async function Dashboard({
   const params = await searchParams;
   const range = parseRange(params.range);
 
-  const [summary, daily, topUsers, trend, recent, active] = await Promise.all([
+  const [summary, daily, topUsers, trend, recent] = await Promise.all([
     fetchSummary(range),
     fetchDailyBurn(range),
     fetchTopUsers(range),
     fetchTrend(),
     fetchRecentAnswers(range, 20),
-    fetchActiveUsers(),
   ]);
 
   const totalCost = summary.total_cost;
@@ -70,52 +69,8 @@ export default async function Dashboard({
         <RangeToggle />
       </div>
 
-      {/* Active users — always fixed windows */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card>
-          <div className="flex items-center gap-2 mb-2">
-            <Flame className="h-4 w-4 text-orange-400" />
-            <CardTitle>DAU</CardTitle>
-          </div>
-          <CardValue>{active.dau}</CardValue>
-          <CardFooter>Users in last 24h</CardFooter>
-        </Card>
-
-        <Card>
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="h-4 w-4 text-blue-400" />
-            <CardTitle>WAU</CardTitle>
-          </div>
-          <CardValue>{active.wau}</CardValue>
-          <CardFooter>Users in last 7d</CardFooter>
-        </Card>
-
-        <Card>
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="h-4 w-4 text-emerald-400" />
-            <CardTitle>MAU</CardTitle>
-          </div>
-          <CardValue>{active.mau}</CardValue>
-          <CardFooter>
-            Stickiness {active.stickiness}%{" "}
-            <span className="text-zinc-600">(DAU/MAU)</span>
-          </CardFooter>
-        </Card>
-
-        <Card>
-          <div className="flex items-center gap-2 mb-2">
-            <UserPlus className="h-4 w-4 text-zinc-400" />
-            <CardTitle>All-time</CardTitle>
-          </div>
-          <CardValue>{active.all_time}</CardValue>
-          <CardFooter>
-            +{active.new_users_7d} new this week
-          </CardFooter>
-        </Card>
-      </div>
-
       {/* Cost stats for selected range */}
-      <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card>
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="h-4 w-4 text-zinc-500" />
