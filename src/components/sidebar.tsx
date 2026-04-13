@@ -35,7 +35,7 @@ export function Sidebar() {
         {/* Brand + collapse */}
         <div className="flex items-center justify-between px-4 py-4">
           {!collapsed && (
-            <span className="text-lg font-semibold tracking-tight">bloom API</span>
+            <span className="text-lg font-semibold tracking-tight">Bloom API</span>
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
